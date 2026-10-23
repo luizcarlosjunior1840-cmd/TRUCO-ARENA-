@@ -1,0 +1,10 @@
+{
+  "name": "Truco Arena",
+  "short_name": "Truco Arena",
+  "description": "Jogue truco gratuitamente com pontos virtuais.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#171a1e",
+  "theme_color": "#171a1e",
+  "icons": []
+}
