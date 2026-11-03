@@ -213,11 +213,15 @@ function playCard(index) {
 
     game.round = game.trickResults.length;
 
-    if (game.trickResults.length === 3) {
-      finishHand(scoreHand());
-    } else {
-      game.turn = "player";
-    }
+    const handWinner = scoreHand();
+
+if (handWinner !== 0) {
+  finishHand(handWinner);
+} else if (game.trickResults.length === 3) {
+  finishHand(0);
+} else {
+  game.turn = "player";
+}
 
     renderGame();
 
