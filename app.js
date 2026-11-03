@@ -103,6 +103,7 @@ function scoreHand() {
   return a[2];
 }
 function finishHand(winner) {
+ game.handDone = true;
   game.turn = "player";
   if (winner === 1) {
     game.playerPoints += game.stake;
