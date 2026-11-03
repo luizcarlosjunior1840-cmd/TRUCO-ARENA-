@@ -294,34 +294,39 @@ function awardFold(winner) {
     saveStats();
   }
 }
-function respondTruco(accept) {
-  if (!game || !game.waitingResponse) return;
+function respondTrucoRaise() {
+  if (!game || !game.waitingResponse || !game.botAsked || game.stake >= 12) return;
 
-  const caller = game.botAsked ? 2 : 1;
+  game.stake = nextStake(game.stake);
+  game.waitingResponse = true;
+  game.botAsked = false;
+  game.raiseAvailableTo = 2;
+  game.message = `Você aumentou para ${game.stake} tentos! O computador vai responder.`;
 
-  game.waitingResponse = false;
+  const strength = game.botCards.reduce(
+    (sum, card) => sum + cardPower(card), 0
+  );
 
-  if (accept) {
-    game.stake = nextStake(game.stake);
-    game.raiseAvailableTo = caller;
-    game.message = `Aumento aceito! A mão vale ${game.stake} tentos.`;
-  } else {
-    game.raiseAvailableTo = null;
-    awardFold(caller);
-    game.message = caller === 1
-      ? `O computador correu. Você ganhou ${game.stake} tento(s).`
-      : `Você correu. O computador ganhou ${game.stake} tento(s).`;
-  }
+  const accept = strength >= 75 || Math.random() < 0.28;
 
- renderGame();
+  renderGame();
 
-if (accept && caller === 2 && game.raiseAvailableTo === 2) {
   window.setTimeout(() => {
-    if (game && !game.handDone && !game.finished) {
-      maybeBotCallsTruco();
+    if (!game || !game.waitingResponse || game.botAsked) return;
+
+    if (accept) {
+      game.waitingResponse = false;
+      game.raiseAvailableTo = 2;
+      game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
+    } else {
+      game.waitingResponse = false;
+      game.raiseAvailableTo = null;
+      awardFold(1);
+      game.message = `O computador correu. Você ganhou ${game.stake} tento(s).`;
     }
-  }, 700);
-}
+
+    renderGame();
+  }, 650);
 }
 function nextHand() {
   if (!game || (!game.handDone && !game.finished)) return;
