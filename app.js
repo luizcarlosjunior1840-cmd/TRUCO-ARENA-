@@ -322,7 +322,7 @@ if (accept && caller === 2 && game.raiseAvailableTo === 2) {
     }
   }, 700);
 }
-
+}
 function nextHand() {
   if (!game || (!game.handDone && !game.finished)) return;
   if (game.finished) return;
