@@ -94,12 +94,21 @@ function buttonMarkup(label, action, cls) {
 }
 function scoreHand() {
   const a = game.trickResults;
-  if (a.length !== 3) return 0;
+
+  if (a.length < 2) return 0;
+
   if (a[0] === a[1] && a[0] !== 0) return a[0];
   if (a[0] === 0 && a[1] !== 0) return a[1];
   if (a[0] !== 0 && a[1] === 0) return a[0];
-  if (a[0] !== 0 && a[1] !== 0 && a[0] !== a[1]) return a[2] || a[0];
+
+  if (a.length < 3) return 0;
+
+  if (a[0] !== 0 && a[1] !== 0 && a[0] !== a[1]) {
+    return a[2] || a[0];
+  }
+
   if (a[0] === 0 && a[1] === 0) return a[2];
+
   return a[2];
 }
 function finishHand(winner) {
