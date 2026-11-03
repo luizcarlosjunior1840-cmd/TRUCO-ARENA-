@@ -126,12 +126,27 @@ function finishHand(winner) {
 }
 function botChooseCard() {
   if (!game.botCards.length) return 0;
-  // O computador tende a guardar cartas fortes, mas não joga sempre ao acaso.
-  const sorted = game.botCards.map((card, index) => ({ index, power: cardPower(card) }));
-  const playerLast = game.tableCards[0] ? cardPower(game.tableCards[0].card) : 0;
-  const winning = sorted.filter(x => x.power > playerLast).sort((a,b) => a.power-b.power);
-  if (playerLast && winning.length && Math.random() < 0.62) return winning[0].index;
-  return sorted[Math.floor(Math.random() * sorted.length)].index;
+
+  const playerLast = game.tableCards[0]
+    ? cardPower(game.tableCards[0].card)
+    : 0;
+
+  const cards = game.botCards.map((card, index) => ({
+    index,
+    power: cardPower(card)
+  }));
+
+  cards.sort((a, b) => a.power - b.power);
+
+  if (playerLast) {
+    const winning = cards.filter(card => card.power > playerLast);
+
+    if (winning.length) {
+      return winning[0].index;
+    }
+  }
+
+  return cards[0].index;
 }
 function maybeBotCallsTruco() {
   if (game.trucoAskedThisHand || game.stake >= 12 || game.waitingResponse || game.handDone) return false;
