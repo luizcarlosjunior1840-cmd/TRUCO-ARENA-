@@ -3,44 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#171a1e">
-  <meta name="description" content="Truco Arena — partidas e torneios de truco com pontos virtuais.">
+  <meta name="theme-color" content="#111713">
+  <meta name="description" content="Truco Arena — treine Truco Paulista com pontos virtuais.">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
   <title>Truco Arena</title>
 </head>
 <body>
-  <header class="top">
-    <div class="brand"><div class="brand-mark">♠</div><div><strong>TRUCO <span>ARENA</span></strong><small>Jogue. Evolua. Conquiste.</small></div></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Truco Arena início">
+      <span class="brand-mark">♠</span>
+      <span class="brand-copy"><strong>TRUCO <b>ARENA</b></strong><small>JOGUE • EVOLUA • CONQUISTE</small></span>
+    </a>
     <button class="avatar" id="profileBtn" aria-label="Abrir perfil">L</button>
   </header>
-  <main>
-    <section class="welcome panel">
-      <div><p class="eyebrow">BEM-VINDO À ARENA</p><h1>Seu próximo<br><span>grande jogo</span> começa aqui.</h1>
-      <p class="muted">Entre na mesa, desafie seus amigos e suba no ranking.</p>
-      <button class="primary" id="playBtn">Encontrar partida <span>→</span></button></div>
-      <div class="cards-art" aria-hidden="true"><div class="playing-card red">♥<small>A</small></div><div class="playing-card black">♠<small>K</small></div><div class="coin">★</div></div>
+
+  <main class="home">
+    <section class="hero panel">
+      <div class="hero-copy">
+        <span class="eyebrow"><i></i> BEM-VINDO À ARENA</span>
+        <h1>A próxima vitória<br>pode ser <em>sua.</em></h1>
+        <p>Prepare suas cartas, desafie o computador e mostre que você conhece o Truco Paulista.</p>
+        <button class="primary-btn" id="playBtn">Encontrar partida <span>→</span></button>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-card card-back"></div>
+        <div class="hero-card card-front black-card"><small>K</small>♠</div>
+        <div class="hero-card card-front red-card"><small>A</small>♥</div>
+        <div class="hero-chip">★</div>
+      </div>
+      <div class="hero-glow"></div>
     </section>
-    <section class="stats">
-      <div class="stat panel"><span>SEU NÍVEL</span><strong>1</strong><small>Novato</small></div>
-      <div class="stat panel"><span>PONTOS</span><strong id="points">120</strong><small>virtuais</small></div>
-      <div class="stat panel"><span>VITÓRIAS</span><strong>0</strong><small>vamos começar</small></div>
+
+    <section class="stats-grid" aria-label="Estatísticas">
+      <article class="stat-card panel"><span>SEU NÍVEL</span><strong id="level">01</strong><small>Novato</small></article>
+      <article class="stat-card panel"><span>PONTOS</span><strong id="points">120</strong><small>virtuais</small></article>
+      <article class="stat-card panel"><span>VITÓRIAS</span><strong id="wins">0</strong><small>partidas</small></article>
     </section>
-    <section class="section-head"><div><p class="eyebrow">ESCOLHA SEU ESTILO</p><h2>Modos de jogo</h2></div><span class="tag">GRATUITO</span></section>
-    <section class="modes">
-      <button class="mode panel" data-mode="Paulista"><div class="mode-icon">🃏</div><div><strong>Truco Paulista</strong><small>Manilhas variáveis · 12 pontos</small></div><span>›</span></button>
-      <button class="mode panel" data-mode="Mineiro"><div class="mode-icon">♦</div><div><strong>Truco Mineiro</strong><small>Regras tradicionais · 12 pontos</small></div><span>›</span></button>
-      <button class="mode panel" data-mode="Treino"><div class="mode-icon">🎯</div><div><strong>Treino solo</strong><small>Pratique contra o computador</small></div><span>›</span></button>
+
+    <section class="section-heading">
+      <div><span class="eyebrow">ESCOLHA SEU ESTILO</span><h2>Modos de jogo</h2></div>
+      <span class="free-tag">GRATUITO</span>
     </section>
-    <section class="section-head"><div><p class="eyebrow">COMPETIÇÃO</p><h2>Na Arena</h2></div></section>
+
+    <section class="mode-list">
+      <button class="mode-card panel" data-mode="Paulista">
+        <span class="mode-icon">🃏</span><span class="mode-copy"><strong>Truco Paulista</strong><small>Manilhas variáveis · melhor de 3 rodadas</small></span><span class="chevron">›</span>
+      </button>
+      <button class="mode-card panel" data-mode="Mineiro">
+        <span class="mode-icon mineiro">♦</span><span class="mode-copy"><strong>Truco Mineiro</strong><small>Em breve · regras tradicionais</small></span><span class="chevron">›</span>
+      </button>
+      <button class="mode-card panel" data-mode="Treino">
+        <span class="mode-icon training">◎</span><span class="mode-copy"><strong>Treino solo</strong><small>Pratique contra o computador</small></span><span class="chevron">›</span>
+      </button>
+    </section>
+
+    <section class="section-heading competition-heading"><div><span class="eyebrow">COMPETIÇÃO</span><h2>Na Arena</h2></div></section>
     <section class="feature-grid">
-      <button class="feature panel" data-page="Torneios"><span class="feature-icon gold">🏆</span><strong>Torneios</strong><small>Dispute por pontos virtuais</small></button>
-      <button class="feature panel" data-page="Ranking"><span class="feature-icon">📈</span><strong>Ranking</strong><small>Veja quem está no topo</small></button>
-      <button class="feature panel" data-page="Amigos"><span class="feature-icon">👥</span><strong>Amigos</strong><small>Convide sua turma</small></button>
-      <button class="feature panel" data-page="Clãs"><span class="feature-icon">🛡️</span><strong>Clãs</strong><small>Jogue em equipe</small></button>
+      <button class="feature-card panel" data-page="Torneios"><span>🏆</span><strong>Torneios</strong><small>Dispute por pontos virtuais</small></button>
+      <button class="feature-card panel" data-page="Ranking"><span>📈</span><strong>Ranking</strong><small>Veja quem está no topo</small></button>
+      <button class="feature-card panel" data-page="Amigos"><span>👥</span><strong>Amigos</strong><small>Convide sua turma</small></button>
+      <button class="feature-card panel" data-page="Clãs"><span>🛡️</span><strong>Clãs</strong><small>Jogue em equipe</small></button>
     </section>
-    <section class="notice"><span>🛡️</span><p><strong>Jogo responsável e gratuito</strong><br><small>Os pontos são virtuais, não podem ser comprados nem sacados e não têm valor em dinheiro.</small></p></section>
+
+    <aside class="responsible panel"><span>🛡️</span><p><strong>Jogo responsável e gratuito</strong><small>Os pontos são virtuais, não podem ser comprados nem sacados e não têm valor em dinheiro.</small></p></aside>
   </main>
+
   <nav class="bottom-nav" aria-label="Navegação principal">
     <button class="active" data-page="Início"><span>⌂</span>Início</button>
     <button data-page="Torneios"><span>♜</span>Torneios</button>
@@ -48,7 +76,11 @@
     <button data-page="Ranking"><span>★</span>Ranking</button>
     <button data-page="Menu"><span>☰</span>Menu</button>
   </nav>
-  <dialog id="infoDialog"><div class="dialog-head"><strong id="dialogTitle">Truco Arena</strong><button id="closeDialog" aria-label="Fechar">×</button></div><div id="dialogBody"></div></dialog>
+
+  <dialog id="infoDialog" class="game-dialog">
+    <div class="dialog-head"><div><span class="eyebrow">TRUCO ARENA</span><strong id="dialogTitle">Partida Paulista</strong></div><button id="closeDialog" aria-label="Fechar">×</button></div>
+    <div id="dialogBody"></div>
+  </dialog>
   <script src="app.js"></script>
 </body>
 </html>
