@@ -281,7 +281,11 @@ function renderGame() {
   } else if (game.waitingResponse) {
     const question = game.botAsked ? "O computador pediu truco. Você aceita?" : "Você pediu truco. Aguardando resposta...";
     controls = `<div class="call-panel"><strong>${question}</strong>${game.botAsked ? `<div class="game-actions">${buttonMarkup("ACEITAR","accept","btn-green")}${buttonMarkup("CORRER","decline","btn-red")}</div>` : `<p>O computador está pensando…</p>`}</div>`;
-  } else if (trickEnded) {
+ } else if (game.turn === "bot") {
+  controls = `<div class="call-panel">
+    <strong>O computador está jogando...</strong>
+    <p>Aguarde sua vez.</p>
+  </div>`; } else if (trickEnded) {
     controls = `${buttonMarkup("PRÓXIMA MÃO","next","btn-gold")}`;
   } else {
     controls = `<div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div><div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div><div class="game-actions">${game.stake < 12 && !game.trucoAskedThisHand ? buttonMarkup("PEDIR TRUCO","truco","btn-gold") : ""}</div>`;
