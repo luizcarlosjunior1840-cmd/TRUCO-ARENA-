@@ -233,7 +233,7 @@ function mostrarMesa() {
       </div>
 
       <p>Valor da mão: <strong style="color:#e2bd60">${jogo.aposta} ponto(s)</strong></p>
-      <p>Disputa ${Math.min(jogo.numeroMao, 3)} de 3</p>
+      <p>Rodada ${Math.min(jogo.numeroMao, 3)} de 3</p>
 
       <p style="color:#d9b65c">VIRA</p>
       <div style="font-size:38px;color:${jogo.vira.naipe.cor}">
