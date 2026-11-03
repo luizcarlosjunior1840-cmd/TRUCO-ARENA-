@@ -333,6 +333,7 @@ function nextHand() {
 }
 function renderGame() {
   if (!game) return;
+
   const playerWon = game.playerPoints >= TARGET;
   const finished = game.finished;
   const table = game.tableCards || [];
@@ -340,55 +341,122 @@ function renderGame() {
   const botCard = table.find(x => x.owner === 2);
   const viraRed = game.vira.suit.red ? "red" : "";
   const trickEnded = game.handDone;
-  let controls = "";
-  if (finished) {
-    controls = `<div class="result-banner"><strong>${playerWon ? "🏆 VOCÊ VENCEU!" : "🤖 O COMPUTADOR VENCEU"}</strong><p>Placar final: ${game.playerPoints} × ${game.botPoints}</p></div>${buttonMarkup("JOGAR NOVAMENTE","restart","btn-green")}`;
-  } else if (game.waitingResponse) {
-  const question = game.botAsked
-    ? "O computador pediu aumento. O que você deseja fazer?"
-    : "Você pediu aumento. O computador está pensando...";
 
-  controls = `<div class="call-panel">
-    <strong>${question}</strong>
-    ${game.botAsked ? `<div class="game-actions">
-      ${buttonMarkup("ACEITAR","accept","btn-green")}
-      ${buttonMarkup("CORRER","decline","btn-red")}
-      ${game.stake < 12 ? buttonMarkup("AUMENTAR","raise","btn-gold") : ""}
-    </div>` : `<p>O computador está pensando…</p>`}
-  </div>`;
+  let controls = "";
+
+  if (finished) {
+    controls = `<div class="result-banner">
+      <strong>${playerWon ? "🏆 VOCÊ VENCEU!" : "🤖 O COMPUTADOR VENCEU"}</strong>
+      <p>Placar final: ${game.playerPoints} × ${game.botPoints}</p>
+    </div>${buttonMarkup("JOGAR NOVAMENTE","restart","btn-green")}`;
+
+  } else if (game.waitingResponse) {
+    const question = game.botAsked
+      ? "O computador pediu aumento. O que você deseja fazer?"
+      : "Você pediu aumento. O computador está pensando...";
+
+    controls = `<div class="call-panel">
+      <strong>${question}</strong>
+      ${game.botAsked ? `<div class="game-actions">
+        ${buttonMarkup("ACEITAR","accept","btn-green")}
+        ${buttonMarkup("CORRER","decline","btn-red")}
+        ${game.stake < 12 ? buttonMarkup("AUMENTAR","raise","btn-gold") : ""}
+      </div>` : `<p>O computador está pensando…</p>`}
+    </div>`;
+
+  } else if (game.turn === "bot") {
+    controls = `<div class="call-panel">
+      <strong>O computador está jogando...</strong>
+      <p>Aguarde sua vez.</p>
+    </div>`;
+
+  } else if (trickEnded) {
+    controls = buttonMarkup("PRÓXIMA MÃO","next","btn-gold");
+
+  } else {
+    controls = `<div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div>
+      <div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div>
+      <div class="game-actions">
+        ${game.stake < 12 && !game.trucoAskedThisHand
+          ? buttonMarkup("PEDIR TRUCO","truco","btn-gold")
+          : ""}
+      </div>`;
+  }
+
   body.innerHTML = `
     <div class="game-shell">
       <div class="scoreboard">
-        <div class="score-box"><span>VOCÊ</span><strong>${game.playerPoints}</strong><small>${game.playerTricks} rodadas vencidas</small></div>
-        <div class="score-box"><span>VALOR DA MÃO</span><strong>${game.stake}</strong><small>tento(s)</small></div>
-        <div class="score-box"><span>COMPUTADOR</span><strong>${game.botPoints}</strong><small>${game.botTricks} rodadas vencidas</small></div>
+        <div class="score-box">
+          <span>VOCÊ</span>
+          <strong>${game.playerPoints}</strong>
+          <small>${game.playerTricks} rodadas vencidas</small>
+        </div>
+        <div class="score-box">
+          <span>VALOR DA MÃO</span>
+          <strong>${game.stake}</strong>
+          <small>tento(s)</small>
+        </div>
+        <div class="score-box">
+          <span>COMPUTADOR</span>
+          <strong>${game.botPoints}</strong>
+          <small>${game.botTricks} rodadas vencidas</small>
+        </div>
       </div>
+
       <div class="table-wrap">
         <div class="table-top">
-          <div class="player-badge opponent-badge"><span class="player-face">🤖</span><span>Computador</span></div>
+          <div class="player-badge opponent-badge">
+            <span class="player-face">🤖</span>
+            <span>Computador</span>
+          </div>
           <span class="table-meta">MÃO ${game.handNumber} · ${Math.min(game.round,3)}/3</span>
         </div>
-        <div class="opponent-hand">${game.botCards.map(() => '<span class="mini-back"></span>').join("") || '<span class="round-info">Sem cartas</span>'}</div>
+
+        <div class="opponent-hand">
+          ${game.botCards.map(() => '<span class="mini-back"></span>').join("") || '<span class="round-info">Sem cartas</span>'}
+        </div>
+
         <div class="vira-row">VIRA</div>
         <div class="vira-card ${viraRed}">${game.vira.name}${game.vira.suit.symbol}</div>
-        <div class="play-area">${botCard ? cardMarkup(botCard.card) : '<div class="empty-slot"></div>'}${playerCard ? cardMarkup(playerCard.card) : '<div class="empty-slot"></div>'}</div>
+
+        <div class="play-area">
+          ${botCard ? cardMarkup(botCard.card) : '<div class="empty-slot"></div>'}
+          ${playerCard ? cardMarkup(playerCard.card) : '<div class="empty-slot"></div>'}
+        </div>
+
         <p class="table-message" aria-live="polite">${escapeHTML(game.message)}</p>
-        <div class="player-area"><span class="table-meta">TRUCO PAULISTA</span><div class="player-badge"><span class="player-face">L</span><span>Você</span></div></div>
+
+        <div class="player-area">
+          <span class="table-meta">TRUCO PAULISTA</span>
+          <div class="player-badge">
+            <span class="player-face">L</span>
+            <span>Você</span>
+          </div>
+        </div>
       </div>
+
       ${controls}
+
       <p class="round-info">Partida de treino · pontos exclusivamente virtuais</p>
     </div>`;
-  body.querySelectorAll("[data-card]").forEach(btn => btn.addEventListener("click", () => playCard(Number(btn.dataset.card))));
-  body.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => {
-    const action = btn.dataset.action;
-    if (action === "truco") requestTruco();
-    if (action === "accept") respondTruco(true);
-    if (action === "decline") respondTruco(false);
-    if (action === "raise") requestTruco();
-    if (action === "next") nextHand();
-    if (action === "restart") startGame();
-  }));
-}
+
+  body.querySelectorAll("[data-card]").forEach(btn => {
+    btn.addEventListener("click", () => playCard(Number(btn.dataset.card)));
+  });
+
+  body.querySelectorAll("[data-action]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const action = btn.dataset.action;
+
+      if (action === "truco") requestTruco();
+      if (action === "accept") respondTruco(true);
+      if (action === "decline") respondTruco(false);
+      if (action === "raise") requestTruco();
+      if (action === "next") nextHand();
+      if (action === "restart") startGame();
+    });
+  });
+    }
 function escapeHTML(value) {
   return String(value).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
