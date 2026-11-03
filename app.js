@@ -136,7 +136,7 @@ function botChooseCard() {
 function maybeBotCallsTruco() {
   if (game.trucoAskedThisHand || game.stake >= 12 || game.waitingResponse || game.handDone) return false;
   const strength = game.botCards.reduce((sum, card) => sum + cardPower(card), 0);
-  if (strength > 115 && Math.random() < 0.13) {
+  if (strength > 95 && Math.random() < 0.45) {
     game.waitingResponse = true;
     game.botAsked = true;
     game.trucoAskedThisHand = true;
