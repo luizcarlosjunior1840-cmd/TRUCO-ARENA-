@@ -241,7 +241,11 @@ function mostrarMesa() {
       </div>
 
       <p style="color:#d9b65c">CARTAS DO COMPUTADOR</p>
-      <div style="font-size:27px">🂠 🂠 🂠</div>
+      <div style="display:flex;justify-content:center;gap:8px;padding:8px">
+<span style="width:28px;height:42px;background:linear-gradient(135deg,#8b1e2d,#3b1018);border:2px solid #d9b65c;border-radius:5px;display:inline-block"></span>
+<span style="width:28px;height:42px;background:linear-gradient(135deg,#8b1e2d,#3b1018);border:2px solid #d9b65c;border-radius:5px;display:inline-block"></span>
+<span style="width:28px;height:42px;background:linear-gradient(135deg,#8b1e2d,#3b1018);border:2px solid #d9b65c;border-radius:5px;display:inline-block"></span>
+</div>
 
       <p style="color:#d9b65c">MESA</p>
       <div style="
