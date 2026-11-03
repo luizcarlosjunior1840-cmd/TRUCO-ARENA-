@@ -59,7 +59,7 @@ function dealHand() {
   game.waitingResponse = false;
   game.turn = "player";
   game.handDone = false;
-  game.trucoAskedThisHand = false;
+  game.raiseAvailableTo = null;
   game.message = "Sua vez. Escolha uma carta.";
   game.botAsked = false;
 }
@@ -236,24 +236,37 @@ if (handWinner !== 0) {
       }
   
 function requestTruco() {
-  if (!game || game.finished || game.handDone || game.waitingResponse || game.stake >= 12 || game.trucoAskedThisHand) return;
+  if (!game || game.finished || game.handDone ||
+      game.waitingResponse || game.stake >= 12) return;
+
   game.waitingResponse = true;
   game.botAsked = false;
-  game.trucoAskedThisHand = true;
-  game.message = "Você pediu truco. O computador vai responder.";
-  const strength = game.botCards.reduce((sum, card) => sum + cardPower(card), 0);
+  game.raiseAvailableTo = 2;
+  game.message = "Você pediu aumento. O computador vai responder.";
+
+  const strength = game.botCards.reduce(
+    (sum, card) => sum + cardPower(card), 0
+  );
+
   const accept = strength >= 75 || Math.random() < 0.28;
+
   renderGame();
+
   window.setTimeout(() => {
     if (!game || !game.waitingResponse || game.botAsked) return;
+
     if (accept) {
       game.stake = nextStake(game.stake);
       game.waitingResponse = false;
+      game.raiseAvailableTo = 1;
       game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
     } else {
-     game.waitingResponse = false; awardFold(1);
+      game.waitingResponse = false;
+      game.raiseAvailableTo = null;
+      awardFold(1);
       game.message = `O computador correu. Você ganhou ${game.stake} tento(s).`;
     }
+
     renderGame();
   }, 650);
 }
