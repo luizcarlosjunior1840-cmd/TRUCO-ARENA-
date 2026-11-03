@@ -456,7 +456,7 @@ function renderGame() {
       if (action === "truco") requestTruco();
       if (action === "accept") respondTruco(true);
       if (action === "decline") respondTruco(false);
-      if (action === "raise") requestTruco();
+      if (action === "raise") respondTrucoRaise();
       if (action === "next") nextHand();
       if (action === "restart") startGame();
     });
