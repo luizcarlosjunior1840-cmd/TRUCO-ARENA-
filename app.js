@@ -223,7 +223,7 @@ function requestTruco() {
       game.waitingResponse = false;
       game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
     } else {
-      awardFold(1);
+     game.waitingResponse = false; awardFold(1);
       game.message = `O computador correu. Você ganhou ${game.stake} tento(s).`;
     }
     renderGame();
@@ -236,6 +236,7 @@ function awardFold(winner) {
   if (winner === 1) game.playerPoints += game.stake;
   else game.botPoints += game.stake;
   game.handDone = true;
+  game.turn = "player";
   if (game.playerPoints >= TARGET || game.botPoints >= TARGET) {
     game.finished = true;
     const won = game.playerPoints >= TARGET;
