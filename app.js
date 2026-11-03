@@ -145,31 +145,67 @@ function maybeBotCallsTruco() {
   }
   return false;
 }
+
 function playCard(index) {
-  if (!game || game.finished || game.handDone || game.waitingResponse || game.turn !== "player") return;
+  if (!game || game.finished || game.handDone ||
+      game.waitingResponse || game.turn !== "player") return;
+
   if (!game.playerCards[index]) return;
+
+  const currentGame = game;
   const playerCard = game.playerCards.splice(index, 1)[0];
-  const botIndex = botChooseCard();
-  const botCard = game.botCards.splice(botIndex, 1)[0];
-  game.tableCards = [{ card: playerCard, owner: 1 }, { card: botCard, owner: 2 }];
-  const p = cardPower(playerCard), b = cardPower(botCard);
-  const winner = p > b ? 1 : b > p ? 2 : 0;
-  game.trickResults.push(winner);
-  if (winner === 1) game.playerTricks++;
-  if (winner === 2) game.botTricks++;
-  game.message = winner === 1 ? "Você venceu esta rodada!" : winner === 2 ? "O computador venceu esta rodada!" : "Rodada empatada!";
-  game.round = game.trickResults.length;
-  if (game.trickResults.length === 3) {
-    finishHand(scoreHand());
-  } else {
-    game.turn = "player";
-  }
+
+  // Primeiro, somente a carta do jogador aparece na mesa.
+  game.tableCards = [{ card: playerCard, owner: 1 }];
+  game.turn = "bot";
+  game.message = "Você jogou. O computador está pensando...";
   renderGame();
-  if (!game.handDone && !game.finished) {
-    // A chamada do computador pode aparecer antes da próxima jogada.
-    window.setTimeout(() => { if (game && !game.handDone && !game.finished) maybeBotCallsTruco(); }, 500);
-  }
-}
+
+  // Depois, o computador faz sua jogada.
+  window.setTimeout(() => {
+    if (game !== currentGame || game.handDone ||
+        game.finished || game.turn !== "bot") return;
+
+    const botIndex = botChooseCard();
+    const botCard = game.botCards.splice(botIndex, 1)[0];
+
+    game.tableCards.push({ card: botCard, owner: 2 });
+
+    const p = cardPower(playerCard);
+    const b = cardPower(botCard);
+    const winner = p > b ? 1 : b > p ? 2 : 0;
+
+    game.trickResults.push(winner);
+
+    if (winner === 1) game.playerTricks++;
+    if (winner === 2) game.botTricks++;
+
+    game.message = winner === 1
+      ? "Você venceu esta rodada!"
+      : winner === 2
+        ? "O computador venceu esta rodada!"
+        : "Rodada empatada!";
+
+    game.round = game.trickResults.length;
+
+    if (game.trickResults.length === 3) {
+      finishHand(scoreHand());
+    } else {
+      game.turn = "player";
+    }
+
+    renderGame();
+
+    if (!game.handDone && !game.finished) {
+      window.setTimeout(() => {
+        if (game === currentGame && !game.handDone && !game.finished) {
+          maybeBotCallsTruco();
+        }
+      }, 500);
+    }
+  }, 650);
+      }
+  
 function requestTruco() {
   if (!game || game.finished || game.handDone || game.waitingResponse || game.stake >= 12 || game.trucoAskedThisHand) return;
   game.waitingResponse = true;
