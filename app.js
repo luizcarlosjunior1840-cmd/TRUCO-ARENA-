@@ -288,17 +288,23 @@ function awardFold(winner) {
 }
 function respondTruco(accept) {
   if (!game || !game.waitingResponse) return;
+
   const caller = game.botAsked ? 2 : 1;
+
   game.waitingResponse = false;
+
   if (accept) {
     game.stake = nextStake(game.stake);
-    game.message = `Truco aceito! A mão vale ${game.stake} tentos.`;
+    game.raiseAvailableTo = caller;
+    game.message = `Aumento aceito! A mão vale ${game.stake} tentos.`;
   } else {
+    game.raiseAvailableTo = null;
     awardFold(caller);
     game.message = caller === 1
       ? `O computador correu. Você ganhou ${game.stake} tento(s).`
       : `Você correu. O computador ganhou ${game.stake} tento(s).`;
   }
+
   renderGame();
 }
 function nextHand() {
@@ -322,17 +328,18 @@ function renderGame() {
   if (finished) {
     controls = `<div class="result-banner"><strong>${playerWon ? "🏆 VOCÊ VENCEU!" : "🤖 O COMPUTADOR VENCEU"}</strong><p>Placar final: ${game.playerPoints} × ${game.botPoints}</p></div>${buttonMarkup("JOGAR NOVAMENTE","restart","btn-green")}`;
   } else if (game.waitingResponse) {
-    const question = game.botAsked ? "O computador pediu truco. Você aceita?" : "Você pediu truco. Aguardando resposta...";
-    controls = `<div class="call-panel"><strong>${question}</strong>${game.botAsked ? `<div class="game-actions">${buttonMarkup("ACEITAR","accept","btn-green")}${buttonMarkup("CORRER","decline","btn-red")}</div>` : `<p>O computador está pensando…</p>`}</div>`;
- } else if (game.turn === "bot") {
+  const question = game.botAsked
+    ? "O computador pediu aumento. O que você deseja fazer?"
+    : "Você pediu aumento. O computador está pensando...";
+
   controls = `<div class="call-panel">
-    <strong>O computador está jogando...</strong>
-    <p>Aguarde sua vez.</p>
-  </div>`; } else if (trickEnded) {
-    controls = `${buttonMarkup("PRÓXIMA MÃO","next","btn-gold")}`;
-  } else {
-    controls = `<div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div><div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div><div class="game-actions">${game.stake < 12 && !game.trucoAskedThisHand ? buttonMarkup("PEDIR TRUCO","truco","btn-gold") : ""}</div>`;
-  }
+    <strong>${question}</strong>
+    ${game.botAsked ? `<div class="game-actions">
+      ${buttonMarkup("ACEITAR","accept","btn-green")}
+      ${buttonMarkup("CORRER","decline","btn-red")}
+      ${game.stake < 12 ? buttonMarkup("AUMENTAR","raise","btn-gold") : ""}
+    </div>` : `<p>O computador está pensando…</p>`}
+  </div>`;
   body.innerHTML = `
     <div class="game-shell">
       <div class="scoreboard">
@@ -361,6 +368,7 @@ function renderGame() {
     if (action === "truco") requestTruco();
     if (action === "accept") respondTruco(true);
     if (action === "decline") respondTruco(false);
+    if (action === "raise") requestTruco();
     if (action === "next") nextHand();
     if (action === "restart") startGame();
   }));
