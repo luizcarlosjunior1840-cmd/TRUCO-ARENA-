@@ -158,16 +158,24 @@ function botChooseCard() {
   return cards[0].index;
 }
 function maybeBotCallsTruco() {
-  if (game.trucoAskedThisHand || game.stake >= 12 || game.waitingResponse || game.handDone) return false;
-  const strength = game.botCards.reduce((sum, card) => sum + cardPower(card), 0);
+  if (game.stake >= 12 || game.waitingResponse || game.handDone) {
+    return false;
+  }
+
+  if (game.raiseAvailableTo !== 2) return false;
+
+  const strength = game.botCards.reduce(
+    (sum, card) => sum + cardPower(card), 0
+  );
+
   if (strength > 95 && Math.random() < 0.45) {
     game.waitingResponse = true;
     game.botAsked = true;
-    game.trucoAskedThisHand = true;
-    game.message = "O computador pediu truco!";
+    game.message = `O computador aumentou para ${nextStake(game.stake)} tentos!`;
     renderGame();
     return true;
   }
+
   return false;
 }
 
@@ -305,8 +313,16 @@ function respondTruco(accept) {
       : `Você correu. O computador ganhou ${game.stake} tento(s).`;
   }
 
-  renderGame();
+ renderGame();
+
+if (accept && caller === 2 && game.raiseAvailableTo === 2) {
+  window.setTimeout(() => {
+    if (game && !game.handDone && !game.finished) {
+      maybeBotCallsTruco();
+    }
+  }, 700);
 }
+
 function nextHand() {
   if (!game || (!game.handDone && !game.finished)) return;
   if (game.finished) return;
