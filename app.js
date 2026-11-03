@@ -266,7 +266,7 @@ function requestTruco() {
     if (accept) {
       game.stake = nextStake(game.stake);
       game.waitingResponse = false;
-      game.raiseAvailableTo = 1;
+      game.raiseAvailableTo = 2;
       game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
     } else {
       game.waitingResponse = false;
