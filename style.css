@@ -40,3 +40,68 @@ button{font:inherit;cursor:pointer}
 .info-content{padding:22px 18px;text-align:center}.info-content h3{font:700 20px 'Space Grotesk';color:var(--gold2)}.info-content p{font-size:12px;line-height:1.6;color:#c1cbc1}.info-content button{margin-top:12px}
 @media(min-width:600px){.home{padding-top:28px}.hero{min-height:285px;padding:32px}.hero-copy{max-width:65%}.hero-art{right:55px;transform:scale(1.18)}.game-shell{padding:15px 18px 18px}.table-wrap{padding:10px 16px}.opponent-hand{margin:9px auto}.play-area{min-height:100px}.hand-card{width:78px;height:110px}}
 @media(max-width:360px){.hero{padding:18px 14px}.hero-copy{max-width:76%}.hero-art{right:-28px;opacity:.8}.hero h1{font-size:27px}.stat-card{padding:11px 8px}.table-wrap{border-width:3px}.player-badge{font-size:7px}.game-btn{min-width:92px;padding:9px}}
+
+
+/* TRUCO ARENA v3 — mesa oval inspirada na referência enviada pelo usuário */
+.game-dialog{width:min(96vw,650px);max-height:95dvh;border-radius:18px}
+.game-shell{padding:8px 9px 14px}
+.scoreboard{margin-bottom:8px}
+.score-box{padding:7px 4px}
+.table-wrap{
+  min-height:405px;
+  padding:12px 10px 18px;
+  border-radius:48% / 19%;
+  border-width:5px;
+  overflow:visible;
+  position:relative;
+}
+.table-wrap:before{inset:6px;border-radius:48% / 19%}
+.table-top{padding:0 8px}
+.opponent-hand{margin:9px auto 4px;min-height:42px}
+.deck-vira-row{gap:24px;margin:4px auto 8px}
+.play-area{min-height:112px;gap:24px;margin:4px auto}
+.played-slot{min-width:65px}
+.played-card{width:57px;height:79px;font-size:27px}
+.played-card small{font-size:12px}
+.empty-slot{width:57px;height:79px}
+.table-message{min-height:25px;margin-bottom:5px;font-size:10px}
+.player-area{padding:0 8px}
+.hand-label{
+  position:relative;z-index:3;
+  margin:-43px 0 5px;
+  text-shadow:0 2px 5px #001b10;
+}
+.hand{
+  position:relative;z-index:3;
+  margin:0 auto;
+  padding:3px 0 7px;
+  gap:clamp(7px,2.5vw,13px);
+}
+.hand-card{
+  width:clamp(65px,18vw,83px);
+  height:clamp(99px,27vw,119px);
+}
+.game-actions{position:relative;z-index:4;margin-top:8px}
+.game-btn{min-height:43px;font-size:11px}
+.call-panel{position:relative;z-index:4}
+.deck-stack{flex:0 0 43px}
+.vira-card{flex:0 0 43px;width:43px;height:59px;font-size:22px}
+.vira-card small{font-size:13px}
+.vira-block em{max-width:66px;font-size:8px}
+.manilha-tag{font-size:6px}
+@media(max-width:390px){
+  .table-wrap{min-height:375px;padding:10px 7px 15px;border-radius:47% / 17%}
+  .table-wrap:before{border-radius:47% / 17%}
+  .opponent-hand{margin:7px auto 3px}
+  .deck-vira-row{gap:17px;margin:2px auto 5px}
+  .play-area{min-height:99px;gap:17px}
+  .played-card{width:52px;height:72px}
+  .empty-slot{width:52px;height:72px}
+  .hand-label{margin-top:-38px;font-size:7px}
+  .hand-card{width:clamp(61px,18vw,72px);height:clamp(92px,26vw,105px)}
+}
+@media(min-width:600px){
+  .table-wrap{min-height:440px;border-radius:48% / 21%}
+  .table-wrap:before{border-radius:48% / 21%}
+  .hand-label{margin-top:-48px}
+}
