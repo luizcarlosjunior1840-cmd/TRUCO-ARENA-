@@ -201,3 +201,22 @@ button{font:inherit;cursor:pointer}
 .card-timer small{font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#b9c4b9}
 .card-timer.urgent{border-color:#d85a5f99;background:#321b1dee;color:#ffd2a0;animation:timerPulse .8s infinite alternate}
 @keyframes timerPulse{from{transform:scale(1)}to{transform:scale(1.03)}}
+
+
+/* v7 — seleção e carta encoberta */
+.hand-card.selected{
+  transform:translateY(-10px);
+  border-color:#f4d27c;
+  box-shadow:0 0 0 3px #d9b66a55,0 10px 22px #000b;
+}
+.played-card.covered{
+  background:repeating-linear-gradient(45deg,#7e2630 0 5px,#481820 5px 10px);
+  border-color:#e4d29e;
+  color:#f3dca4;
+  box-shadow:0 5px 12px #001b10;
+  flex-direction:column;
+  gap:2px;
+}
+.played-card.covered span{font-size:29px;line-height:1}
+.played-card.covered small{position:static;font:800 7px 'DM Sans',sans-serif;letter-spacing:.8px;color:#f3dca4}
+.call-panel .hand{margin-bottom:4px}
