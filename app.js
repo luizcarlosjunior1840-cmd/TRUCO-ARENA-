@@ -29,6 +29,7 @@
   let handTimer = null;
   let botTimer = null;
   let trickTimer = null;
+  let cardTimer = null;
   let stats = loadStats();
 
   function defaultStats() { return { points: 120, wins: 0, losses: 0 }; }
@@ -51,7 +52,8 @@
   }
   function clearTimers() {
     [handTimer, botTimer, trickTimer].forEach(t => { if (t !== null) clearTimeout(t); });
-    handTimer = botTimer = trickTimer = null;
+    if (cardTimer !== null) clearInterval(cardTimer);
+    handTimer = botTimer = trickTimer = cardTimer = null;
   }
   function shuffle(deck) {
     for (let i = deck.length - 1; i > 0; i--) {
@@ -85,7 +87,35 @@
     game.handDone = false;
     game.handWinner = null;
     game.trucoAskedThisHand = false;
+    game.cardTimeLeft = game.turn === "player" ? 15 : 0;
     game.message = game.turn === "player" ? "Sua vez. Escolha uma carta." : "O computador começa esta mão.";
+  }
+
+  function stopCardTimer() {
+    if (cardTimer !== null) clearInterval(cardTimer);
+    cardTimer = null;
+  }
+
+  function startCardTimer() {
+    stopCardTimer();
+    if (!game || game.finished || game.handDone || game.waitingResponse || game.turn !== "player" || !game.playerCards.length) return;
+    game.cardTimeLeft = 15;
+    renderGame();
+    const current = game;
+    cardTimer = setInterval(() => {
+      if (game !== current || game.finished || game.handDone || game.waitingResponse || game.turn !== "player" || !game.playerCards.length) {
+        stopCardTimer();
+        return;
+      }
+      game.cardTimeLeft -= 1;
+      if (game.cardTimeLeft <= 0) {
+        stopCardTimer();
+        game.message = "⏱️ Tempo esgotado! Sua primeira carta foi jogada automaticamente.";
+        playCard(0);
+        return;
+      }
+      renderGame();
+    }, 1000);
   }
   function startGame() {
     clearTimers();
@@ -98,6 +128,7 @@
       revealOnly: false
     };
     dealHand();
+    if (title) title.textContent = "Partida Paulista";
     renderGame();
     if (dialog && !dialog.open) dialog.showModal();
     if (game.turn === "bot") scheduleBotOpening();
@@ -209,6 +240,7 @@
   function playCard(index) {
     if (!game || game.finished || game.handDone || game.waitingResponse ||
         game.turn !== "player" || !game.playerCards[index]) return;
+    stopCardTimer();
     const current = game;
     const card = game.playerCards.splice(index, 1)[0];
     const botAlreadyPlayed = game.tableCards.some(x => x.owner === 2);
@@ -260,6 +292,7 @@
       } else {
         renderGame();
         scheduleBotTrucoCheck();
+        startCardTimer();
       }
     }, TRICK_REVEAL_MS);
   }
@@ -276,6 +309,7 @@
       game.message = "O computador abriu a rodada. Sua vez.";
       renderGame();
       scheduleBotTrucoCheck();
+      startCardTimer();
     }, 650);
   }
 
@@ -354,6 +388,7 @@
       game.botAsked = false;
       game.message = `Você aceitou! A mão vale ${game.stake} tentos.`;
       renderGame();
+      startCardTimer();
       return;
     }
     game.pendingStake = null;
@@ -374,6 +409,7 @@
     botTimer = setTimeout(() => {
       if (game !== current || !game.waitingResponse || game.botAsked) return;
       if (accept) {
+        stopCardTimer();
         game.stake = game.pendingStake;
         game.pendingStake = null;
         game.waitingResponse = false;
@@ -417,15 +453,18 @@
         ${game.botAsked ? `<div class="game-actions">${buttonMarkup("ACEITAR","accept","btn-green")}${buttonMarkup("CORRER","decline","btn-red")}
         ${game.stake < 9 ? buttonMarkup("AUMENTAR","raise","btn-gold") : ""}</div>` : "<p>O computador está pensando…</p>"}</div>`;
     } else {
-      controls = `<div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div>
+      controls = `<div class="card-timer ${game.cardTimeLeft <= 5 ? "urgent" : ""}" aria-live="polite">
+          <span>⏱️</span><strong>${game.cardTimeLeft || 15}s</strong><small>para jogar</small>
+        </div>
+        <div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div>
         <div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div>
-        <div class="game-actions">${game.stake < 12 && !game.trucoAskedThisHand ? buttonMarkup("PEDIR TRUCO","truco","btn-gold") : ""}</div>`;
+        <div class="game-actions">${game.stake < 12 && !game.trucoAskedThisHand ? buttonMarkup("TRUCO!","truco","btn-gold") : ""}</div>`;
     }
     const manilhaName = VALUES[(VALUES.findIndex(v => v.name === game.vira.name) + 1) % VALUES.length].name;
     body.innerHTML = `<div class="game-shell">
       <div class="scoreboard">
         <div class="score-box"><span>VOCÊ</span><strong>${game.playerPoints}</strong><small>${game.playerTricks} rodada(s) nesta mão</small></div>
-        <div class="score-box stake-box"><span>TENTOS / MÃO</span><strong>${game.stake}</strong><small>vale ${game.stake}</small></div>
+        <div class="score-box stake-box"><span>TENTOS</span><strong>${game.stake}</strong><small>vale ${game.stake}</small></div>
         <div class="score-box"><span>COMPUTADOR</span><strong>${game.botPoints}</strong><small>${game.botTricks} rodada(s) nesta mão</small></div>
       </div>
       <div class="table-wrap">
@@ -434,16 +473,18 @@
           <span class="table-meta">MÃO ${game.handNumber} · ${Math.min(game.round,3)}/3</span>
         </div>
         <div class="opponent-hand">${game.botCards.map(() => '<span class="mini-back"></span>').join("") || '<span class="round-info">Sem cartas</span>'}</div>
-        <div class="deck-vira-row">
-          <div class="deck-stack" aria-label="Baralho"><span></span><span></span><b>🂠</b><small>BARALHO</small></div>
-          <div class="vira-block"><span class="vira-row">VIRA</span>
-            <div class="vira-card ${viraRed}"><small>${game.vira.name}</small>${game.vira.suit.symbol}</div>
-            <em>MANILHA: ${manilhaName}</em>
-          </div>
-        </div>
         <div class="play-area">
-          <div class="played-slot">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card)}` : '<div class="empty-slot"></div>'}</div>
-          <div class="played-slot">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-slot opponent-play">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-center">
+            <div class="center-deck-vira">
+              <div class="deck-stack" aria-label="Baralho"><span></span><span></span><b>🂠</b><small>BARALHO</small></div>
+              <div class="vira-block"><span class="vira-row">VIRA</span>
+                <div class="vira-card ${viraRed}"><small>${game.vira.name}</small>${game.vira.suit.symbol}</div>
+                <em>MANILHA: ${manilhaName}</em>
+              </div>
+            </div>
+          </div>
+          <div class="played-slot player-play">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card)}` : '<div class="empty-slot"></div>'}</div>
         </div>
         <p class="table-message" aria-live="polite">${escapeHTML(game.message)}</p>
         <div class="player-area"><span class="table-meta">TRUCO PAULISTA</span><div class="player-badge"><span class="player-face">L</span><span>Você</span></div></div>
