@@ -105,3 +105,99 @@ button{font:inherit;cursor:pointer}
   .table-wrap:before{border-radius:48% / 21%}
   .hand-label{margin-top:-48px}
 }
+
+/* TRUCO ARENA v5 — disposição da mesa conforme a referência enviada
+   Computador: carta jogada no alto / centro
+   Baralho + VIRA: no centro
+   Você: carta jogada embaixo / centro */
+.play-area{
+  position:relative;
+  display:grid;
+  grid-template-rows:auto auto auto;
+  justify-items:center;
+  align-items:center;
+  gap:0;
+  min-height:235px;
+  margin:0 auto;
+  width:100%;
+}
+.played-slot{
+  min-width:72px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  z-index:3;
+}
+.played-slot label{
+  font-size:6px;
+  letter-spacing:.7px;
+  color:#f5e2ad;
+  font-weight:900;
+}
+.opponent-play{grid-row:1; min-height:78px; transform:translateY(2px)}
+.player-play{grid-row:3; min-height:82px; transform:translateY(-2px)}
+.played-center{
+  grid-row:2;
+  width:100%;
+  min-height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:2;
+}
+.center-deck-vira{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+.center-deck-vira .deck-stack{width:45px;height:58px}
+.center-deck-vira .vira-card{width:45px;height:61px;font-size:23px}
+.center-deck-vira .vira-card small{font-size:13px}
+.center-deck-vira .vira-block{gap:6px}
+.empty-slot{width:55px;height:76px;border:1px dashed #ffffff38;border-radius:7px}
+.played-card{
+  width:55px;
+  height:76px;
+  border-radius:7px;
+  font-size:27px;
+}
+.played-card small{font-size:12px}
+.table-message{position:relative;z-index:4;margin:-2px 0 3px}
+
+/* Mantém a VIRA claramente separada do baralho, como na referência. */
+.deck-stack small{bottom:-10px}
+.vira-block em{white-space:nowrap}
+
+@media(max-width:390px){
+  .play-area{min-height:214px}
+  .opponent-play{min-height:69px}
+  .player-play{min-height:73px}
+  .center-deck-vira{gap:14px}
+  .center-deck-vira .deck-stack{width:41px;height:53px}
+  .center-deck-vira .vira-card{width:43px;height:58px}
+  .played-card{width:52px;height:72px}
+  .empty-slot{width:52px;height:72px}
+}
+
+/* Temporizador de 15 segundos para jogar a carta */
+.card-timer{
+  width:max-content;
+  margin:6px auto 4px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 12px;
+  border:1px solid #d6b66e66;
+  border-radius:999px;
+  background:#13231aee;
+  color:#f1d99f;
+  box-shadow:0 4px 12px #0005;
+}
+.card-timer span{font-size:13px}
+.card-timer strong{font:800 15px 'Space Grotesk',sans-serif;min-width:23px;text-align:center}
+.card-timer small{font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#b9c4b9}
+.card-timer.urgent{border-color:#d85a5f99;background:#321b1dee;color:#ffd2a0;animation:timerPulse .8s infinite alternate}
+@keyframes timerPulse{from{transform:scale(1)}to{transform:scale(1.03)}}
