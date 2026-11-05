@@ -87,6 +87,8 @@
     game.handDone = false;
     game.handWinner = null;
     game.trucoAskedThisHand = false;
+    game.raiseAvailable = false;
+    game.selectedCardIndex = null;
     game.cardTimeLeft = game.turn === "player" ? 15 : 0;
     game.message = game.turn === "player" ? "Sua vez. Escolha uma carta." : "O computador começa esta mão.";
   }
@@ -143,7 +145,8 @@
     if (isManilha(card)) return 100 + card.suit.power;
     return card.rank;
   }
-  function cardMarkup(card, extraClass = "") {
+  function cardMarkup(card, extraClass = "", covered = false) {
+    if (covered) return `<div class="played-card covered ${extraClass}" aria-label="Carta jogada encoberta"><span>🂠</span><small>ENCUBERTA</small></div>`;
     const red = card.suit.red ? "red" : "";
     const manilha = isManilha(card) ? " manilha" : "";
     return `<div class="played-card ${red}${manilha} ${extraClass}">
@@ -154,7 +157,8 @@
   function handCardMarkup(card, index) {
     const red = card.suit.red ? "red" : "";
     const manilha = isManilha(card) ? " manilha" : "";
-    return `<button class="hand-card ${red}${manilha}" data-card="${index}"
+    const selected = game && game.selectedCardIndex === index ? " selected" : "";
+    return `<button class="hand-card ${red}${manilha}${selected}" data-card="${index}"
       aria-label="Jogar ${escapeHTML(card.name)} de ${escapeHTML(card.suit.name)}${isManilha(card) ? ', manilha' : ''}">
       <small>${escapeHTML(card.name)}<br>${card.suit.symbol}</small><span>${card.suit.symbol}</span>
       ${isManilha(card) ? '<i class="manilha-tag">MANILHA</i>' : ""}
@@ -228,8 +232,9 @@
     const playerEntry = game.tableCards.find(x => x.owner === 1);
     const options = game.botCards.map((card, index) => ({ index, power: cardPower(card) }))
       .sort((a, b) => a.power - b.power);
-    if (!playerEntry) {
-      // Abre com carta baixa na maioria das vezes, mas varia a estratégia.
+    if (!playerEntry || playerEntry.covered) {
+      // Carta encoberta não revela ao computador qual foi jogada.
+      // Ele escolhe sem usar a força da carta escondida.
       return Math.random() < 0.58 ? options[0].index : options[Math.floor(options.length / 2)].index;
     }
     const target = cardPower(playerEntry.card);
@@ -237,19 +242,27 @@
     // Usa a menor carta capaz de vencer; se não vencer, economiza a menor.
     return winning.length ? winning[0].index : options[0].index;
   }
-  function playCard(index) {
+  function selectCard(index) {
+    if (!game || game.finished || game.handDone || game.waitingResponse || game.turn !== "player" || !game.playerCards[index]) return;
+    game.selectedCardIndex = game.selectedCardIndex === index ? null : index;
+    renderGame();
+}
+
+function playCard(index, covered = false) {
     if (!game || game.finished || game.handDone || game.waitingResponse ||
         game.turn !== "player" || !game.playerCards[index]) return;
     stopCardTimer();
     const current = game;
+    game.selectedCardIndex = null;
     const card = game.playerCards.splice(index, 1)[0];
+    const played = { card, owner: 1, covered: !!covered };
     const botAlreadyPlayed = game.tableCards.some(x => x.owner === 2);
     if (botAlreadyPlayed) {
-      game.tableCards.push({ card, owner: 1 });
+      game.tableCards.push(played);
       resolveTrick(current);
       return;
     }
-    game.tableCards = [{ card, owner: 1 }];
+    game.tableCards = [played];
     game.lastLead = "player";
     game.turn = "bot";
     game.message = "Você jogou. O computador está pensando...";
@@ -286,6 +299,7 @@
       game.tableCards = [];
       game.turn = winner === 1 ? "player" : winner === 2 ? "bot" : game.lastLead;
       game.lastLead = game.turn;
+      if (game.turn === "player" && game.stake < 12) game.raiseAvailable = true;
       if (game.turn === "bot") {
         renderGame();
         scheduleBotOpening();
@@ -307,6 +321,7 @@
       game.lastLead = "bot";
       game.turn = "player";
       game.message = "O computador abriu a rodada. Sua vez.";
+      if (game.stake < 12) game.raiseAvailable = true;
       renderGame();
       scheduleBotTrucoCheck();
       startCardTimer();
@@ -318,10 +333,10 @@
     // Soma com peso maior para manilhas; valores altos indicam mão forte.
     return game.botCards.reduce((sum, c) => sum + cardPower(c), 0);
   }
-  function requestTruco() {
-    if (!game || game.finished || game.handDone || game.waitingResponse ||
-        game.stake >= 12 || game.trucoAskedThisHand) return;
+  function requestRaise() {
+    if (!game || game.finished || game.handDone || game.waitingResponse || game.turn !== "player" || game.stake >= 12) return;
     game.trucoAskedThisHand = true;
+    game.raiseAvailable = false;
     game.waitingResponse = true;
     game.botAsked = false;
     game.pendingStake = nextStake(game.stake);
@@ -343,6 +358,8 @@
         game.stake = game.pendingStake;
         game.pendingStake = null;
         game.waitingResponse = false;
+        game.trucoAskedThisHand = false;
+        game.raiseAvailable = false;
         game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
       } else {
         game.waitingResponse = false;
@@ -353,9 +370,11 @@
       renderGame();
     }, 700);
   }
+  function requestTruco() { return requestRaise(); }
+
   function botCallsTruco() {
     if (!game || game.finished || game.handDone || game.waitingResponse ||
-        game.stake >= 12 || game.trucoAskedThisHand) return false;
+        game.stake >= 12) return false;
     const strength = botStrength();
     // O computador avalia força, placar e chance variável para não pedir sempre.
     const scoreBehind = game.botPoints < game.playerPoints;
@@ -363,6 +382,7 @@
     const shouldCall = Math.random() < (scoreBehind ? Math.min(0.82, chance + 0.12) : chance);
     if (shouldCall) {
       game.trucoAskedThisHand = true;
+      game.raiseAvailable = false;
       game.waitingResponse = true;
       game.botAsked = true;
       game.pendingStake = nextStake(game.stake);
@@ -386,6 +406,8 @@
       game.pendingStake = null;
       game.waitingResponse = false;
       game.botAsked = false;
+      game.trucoAskedThisHand = false;
+      game.raiseAvailable = false;
       game.message = `Você aceitou! A mão vale ${game.stake} tentos.`;
       renderGame();
       startCardTimer();
@@ -400,6 +422,7 @@
     if (!game || game.finished || game.handDone || !game.waitingResponse || !game.botAsked || game.stake >= 9) return;
     game.stake = game.pendingStake;
     game.pendingStake = nextStake(game.stake);
+    game.raiseAvailable = false;
     game.botAsked = false;
     game.waitingResponse = true;
     game.message = `Você aumentou! O computador precisa responder por ${game.pendingStake} tentos.`;
@@ -413,6 +436,7 @@
         game.stake = game.pendingStake;
         game.pendingStake = null;
         game.waitingResponse = false;
+        game.raiseAvailable = false;
         game.message = `O computador aceitou! A mão vale ${game.stake} tentos.`;
         renderGame();
       } else {
@@ -449,16 +473,26 @@
     } else if (game.waitingResponse) {
       const q = game.botAsked ? `O computador pediu ${game.pendingStake}. O que você deseja fazer?`
         : `Você pediu aumento para ${game.pendingStake}. Aguarde a resposta.`;
-      controls = `<div class="call-panel"><strong>${escapeHTML(q)}</strong>
+      controls = `<div class="hand-label">SUAS CARTAS · FICAM VISÍVEIS DURANTE O TRUCO</div>
+        <div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div>
+        <div class="call-panel"><strong>${escapeHTML(q)}</strong>
         ${game.botAsked ? `<div class="game-actions">${buttonMarkup("ACEITAR","accept","btn-green")}${buttonMarkup("CORRER","decline","btn-red")}
-        ${game.stake < 9 ? buttonMarkup("AUMENTAR","raise","btn-gold") : ""}</div>` : "<p>O computador está pensando…</p>"}</div>`;
+        ${game.stake < 9 ? buttonMarkup(`AUMENTAR PARA ${game.pendingStake}`,"raise","btn-gold") : ""}</div>` : "<p>O computador está pensando…</p>"}</div>`;
     } else {
+      const canRaise = game.turn === "player" && game.raiseAvailable && game.stake < 12 && !game.waitingResponse;
+      const selected = game.selectedCardIndex !== null ? game.selectedCardIndex : null;
       controls = `<div class="card-timer ${game.cardTimeLeft <= 5 ? "urgent" : ""}" aria-live="polite">
           <span>⏱️</span><strong>${game.cardTimeLeft || 15}s</strong><small>para jogar</small>
         </div>
-        <div class="hand-label">SUAS CARTAS · TOQUE PARA JOGAR</div>
-        <div class="hand">${game.playerCards.map(handCardMarkup).join("")}</div>
-        <div class="game-actions">${game.stake < 12 && !game.trucoAskedThisHand ? buttonMarkup("TRUCO!","truco","btn-gold") : ""}</div>`;
+        <div class="hand-label">SUAS CARTAS · TOQUE PARA SELECIONAR</div>
+        <div class="hand">${game.playerCards.map((c,i)=>handCardMarkup(c,i)).join("")}</div>
+        <div class="game-actions">
+          ${selected !== null && game.turn === "player" ? buttonMarkup("JOGAR CARTA", "play-selected", "btn-green") : ""}
+          ${selected !== null && game.turn === "player" ? buttonMarkup("JOGAR ENCUBERTA", "play-covered", "btn-dark") : ""}
+          ${(game.turn === "player" && game.stake === 1 && !game.trucoAskedThisHand) ? buttonMarkup("TRUCO!", "truco", "btn-gold") : ""}
+          ${(game.turn === "player" && game.stake > 1 && game.raiseAvailable) ? buttonMarkup(`AUMENTAR PARA ${nextStake(game.stake)}`, "raise-now", "btn-gold") : ""}
+        </div>
+        ${game.waitingResponse && game.botAsked ? `<div class="call-panel"><strong>O computador pediu ${game.pendingStake}. O que você deseja fazer?</strong><div class="game-actions">${buttonMarkup("ACEITAR","accept","btn-green")}${buttonMarkup("CORRER","decline","btn-red")}${game.stake < 9 ? buttonMarkup(`AUMENTAR PARA ${game.pendingStake}`,"raise","btn-gold") : ""}</div></div>` : ""}`;
     }
     const manilhaName = VALUES[(VALUES.findIndex(v => v.name === game.vira.name) + 1) % VALUES.length].name;
     body.innerHTML = `<div class="game-shell">
@@ -474,7 +508,7 @@
         </div>
         <div class="opponent-hand">${game.botCards.map(() => '<span class="mini-back"></span>').join("") || '<span class="round-info">Sem cartas</span>'}</div>
         <div class="play-area">
-          <div class="played-slot opponent-play">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-slot opponent-play">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card, "", bCard.covered)}` : '<div class="empty-slot"></div>'}</div>
           <div class="played-center">
             <div class="center-deck-vira">
               <div class="deck-stack" aria-label="Baralho"><span></span><span></span><b>🂠</b><small>BARALHO</small></div>
@@ -484,7 +518,7 @@
               </div>
             </div>
           </div>
-          <div class="played-slot player-play">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-slot player-play">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card, "", pCard.covered)}` : '<div class="empty-slot"></div>'}</div>
         </div>
         <p class="table-message" aria-live="polite">${escapeHTML(game.message)}</p>
         <div class="player-area"><span class="table-meta">TRUCO PAULISTA</span><div class="player-badge"><span class="player-face">L</span><span>Você</span></div></div>
@@ -492,10 +526,13 @@
       ${controls}
       <p class="round-info">Treino · pontos virtuais · vence quem chegar a ${TARGET} tentos</p>
     </div>`;
-    body.querySelectorAll("[data-card]").forEach(btn => btn.addEventListener("click", () => playCard(Number(btn.dataset.card))));
+    body.querySelectorAll("[data-card]").forEach(btn => btn.addEventListener("click", () => selectCard(Number(btn.dataset.card))));
     body.querySelectorAll("[data-action]").forEach(btn => btn.addEventListener("click", () => {
       switch (btn.dataset.action) {
+        case "play-selected": if (game.selectedCardIndex !== null) playCard(game.selectedCardIndex, false); break;
+        case "play-covered": if (game.selectedCardIndex !== null) playCard(game.selectedCardIndex, true); break;
         case "truco": requestTruco(); break;
+        case "raise-now": requestRaise(); break;
         case "accept": respondTruco(true); break;
         case "decline": respondTruco(false); break;
         case "raise": respondTrucoRaise(); break;
