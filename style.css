@@ -220,3 +220,11 @@ button{font:inherit;cursor:pointer}
 .played-card.covered span{font-size:29px;line-height:1}
 .played-card.covered small{position:static;font:800 7px 'DM Sans',sans-serif;letter-spacing:.8px;color:#f3dca4}
 .call-panel .hand{margin-bottom:4px}
+
+/* MULTIPLAYER */
+.online-btn{margin-top:8px;background:linear-gradient(135deg,#67d5a0,#277b55);color:#081a11}
+.online-panel{padding:22px 18px;text-align:center}.online-panel h3{margin:0 0 8px;font:700 21px 'Space Grotesk';color:var(--gold2)}
+.online-panel p{font-size:11px;color:#c2cbc2;line-height:1.55}.room-code{font:800 30px 'Space Grotesk';letter-spacing:5px;color:var(--gold2);background:#0f1912;border:1px solid #d6b66e66;border-radius:12px;padding:12px;margin:12px 0}
+.room-input{width:100%;padding:13px;border-radius:10px;border:1px solid #ffffff20;background:#202a23;color:#fff;text-align:center;font-weight:800;letter-spacing:4px;text-transform:uppercase;outline:none}
+.online-status{font-size:10px;color:#9fd9b4;margin:8px 0}.online-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.online-actions .game-btn{min-width:130px}.online-player{color:#f0d99b;font-weight:800}
