@@ -2,6 +2,27 @@
 
 /* TRUCO ARENA — Truco Paulista, treino local com pontos virtuais. */
 (() => {
+  // Efeitos: detecta cartas novas na mesa (animação + som) e mensagens de truco (voz).
+  const fxSeen = new Set(); let fxLast = "", fxEnded = false;
+  function fxNew(table) {
+    if (!table.length) { fxSeen.clear(); return {}; }
+    const fresh = {};
+    table.forEach(x => { const k = x.owner + "|" + x.card.name + x.card.suit.name; if (!fxSeen.has(k)) { fxSeen.add(k); fresh[x.owner] = true; } });
+    if ((fresh[1] || fresh[2]) && window.FX) FX.card();
+    return fresh;
+  }
+  function fxHooks(msg, pending, win) {
+    if (!window.FX) return;
+    if (msg !== fxLast) {
+      fxLast = msg;
+      const bot = /^(O computador|O adversário)/.test(msg);
+      if (pending && /pediu|aumentou/.test(msg)) FX.call(pending, bot);
+      else if (/aceitou/i.test(msg)) FX.say("Aceito!", bot);
+      else if (/correu/i.test(msg)) FX.say("Correu!", bot);
+    }
+    if (win === null) fxEnded = false; else if (!fxEnded) { fxEnded = true; FX.end(win); }
+  }
+  const fxBtn = () => `<button class="fx-toggle" aria-label="Som e música">${window.FX ? FX.icon() : "🔊"}</button>`;
   const $ = id => document.getElementById(id);
   const dialog = $("infoDialog");
   const title = $("dialogTitle");
@@ -209,11 +230,11 @@
     game.pendingStake = null;
     game.turn = "player";
     if (winner === 1) {
-      game.playerPoints += game.stake;
+      game.playerPoints = Math.min(TARGET, game.playerPoints + game.stake);
       game.playerHands++;
       game.message = reason || `Você venceu a mão! +${game.stake} tento(s).`;
     } else if (winner === 2) {
-      game.botPoints += game.stake;
+      game.botPoints = Math.min(TARGET, game.botPoints + game.stake);
       game.botHands++;
       game.message = reason || `O computador venceu a mão! +${game.stake} tento(s).`;
     } else game.message = reason || "Mão empatada. Ninguém marcou tentos.";
@@ -475,6 +496,8 @@ function playCard(index, covered = false) {
     const table = game.tableCards || [];
     const pCard = table.find(x => x.owner === 1);
     const bCard = table.find(x => x.owner === 2);
+    const fresh = fxNew(table);
+    fxHooks(game.message, game.waitingResponse ? game.pendingStake : null, game.finished ? game.playerPoints >= TARGET : null);
     const viraRed = game.vira.suit.red ? "red" : "";
     let controls = "";
     if (game.finished) {
@@ -516,11 +539,11 @@ function playCard(index, covered = false) {
       <div class="table-wrap">
         <div class="table-top">
           <div class="player-badge opponent-badge"><span class="player-face">🤖</span><span>Computador</span></div>
-          <span class="table-meta">MÃO ${game.handNumber} · ${Math.min(game.round,3)}/3</span>
+          <span class="table-meta">MÃO ${game.handNumber} · ${Math.min(game.round,3)}/3</span>${fxBtn()}
         </div>
         <div class="opponent-hand">${game.botCards.map(() => '<span class="mini-back"></span>').join("") || '<span class="round-info">Sem cartas</span>'}</div>
         <div class="play-area">
-          <div class="played-slot opponent-play">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card, "", bCard.covered)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-slot opponent-play">${bCard ? `<label>COMPUTADOR</label>${cardMarkup(bCard.card, fresh[2] ? "fly-bot" : "", bCard.covered)}` : '<div class="empty-slot"></div>'}</div>
           <div class="played-center">
             <div class="center-deck-vira">
               <div class="deck-stack" aria-label="Baralho"><span></span><span></span><b>🂠</b><small>BARALHO</small></div>
@@ -530,7 +553,7 @@ function playCard(index, covered = false) {
               </div>
             </div>
           </div>
-          <div class="played-slot player-play">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card, "", pCard.covered)}` : '<div class="empty-slot"></div>'}</div>
+          <div class="played-slot player-play">${pCard ? `<label>VOCÊ</label>${cardMarkup(pCard.card, fresh[1] ? "fly-me" : "", pCard.covered)}` : '<div class="empty-slot"></div>'}</div>
         </div>
         <p class="table-message" aria-live="polite">${escapeHTML(game.message)}</p>
         <div class="player-area"><span class="table-meta">TRUCO PAULISTA</span><div class="player-badge"><span class="player-face">L</span><span>Você</span></div></div>
@@ -673,6 +696,7 @@ function playCard(index, covered = false) {
     const myTr=onlineRole===1?online.tricks[0]:online.tricks[1], oppTr=onlineRole===1?online.tricks[1]:online.tricks[0];
     const viraRed=online.vira.suit.red?'red':''; const mi=VALUES[(VALUES.findIndex(v=>v.name===online.vira.name)+1)%VALUES.length].name;
     const myTable=online.table.find(x=>x.owner===onlineRole), oppTable=online.table.find(x=>x.owner!==(onlineRole));
+    const fresh=fxNew(online.table); fxHooks(online.message, online.waiting?online.pending:null, online.finished?myPts>=TARGET:null);
     let controls='';
     if(online.finished){
       controls=`<div class="result-banner"><strong>${myPts>=TARGET?'🏆 VOCÊ VENCEU!':'🤝 VOCÊ PERDEU'}</strong><p>Placar final: ${myPts} × ${oppPts}</p></div><div class="game-actions"><button class="game-btn btn-green" data-online-action="leave">SAIR DA PARTIDA</button></div>`;
@@ -683,7 +707,7 @@ function playCard(index, covered = false) {
       const sel=online.selected!==null;
       controls=`<div class="card-timer ${online.cardTime<=5?'urgent':''}"><span>⏱️</span><strong>${online.cardTime||15}s</strong><small>para jogar</small></div><div class="hand-label">SUAS CARTAS · TOQUE PARA SELECIONAR</div><div class="hand">${myCards.map((c,i)=>handCardMarkupOnline(c,i)).join('')}</div><div class="game-actions">${sel?`<button class="game-btn btn-green" data-online-action="play">JOGAR CARTA</button>`:''}${sel&&online.round>=2?`<button class="game-btn btn-dark" data-online-action="covered">JOGAR ENCUBERTA</button>`:''}${online.turn===onlineRole&&online.stake===1?`<button class="game-btn btn-gold" data-online-action="truco">TRUCO!</button>`:''}${online.turn===onlineRole&&online.stake>1&&online.stake<12&&online.last!==onlineRole?`<button class="game-btn btn-gold" data-online-action="raise-now">AUMENTAR PARA ${NEXT_STAKE[online.stake]||12}</button>`:''}</div>`;
     }
-    body.innerHTML=`<div class="game-shell"><div class="scoreboard"><div class="score-box"><span>${escapeHTML(myName)}</span><strong>${myPts}</strong><small>${myTr} rodada(s) nesta mão</small></div><div class="score-box"><span>TENTOS</span><strong>${online.stake}</strong><small>vale ${online.stake}</small></div><div class="score-box"><span>${escapeHTML(oppName)}</span><strong>${oppPts}</strong><small>${oppTr} rodada(s) nesta mão</small></div></div><div class="table-wrap"><div class="table-top"><div class="player-badge opponent-badge"><span class="player-face">👤</span><span>${escapeHTML(oppName)}</span></div><span class="table-meta">MÃO ${online.handNumber} · ${Math.min(online.round,3)}/3</span></div><div class="opponent-hand">${oppCards.map(()=>'<span class="mini-back"></span>').join('')}</div><div class="play-area"><div class="played-slot opponent-play">${oppTable?`<label>${escapeHTML(oppName.toUpperCase())}</label>${cardMarkup(oppTable.card,'',oppTable.covered)}`:'<div class="empty-slot"></div>'}</div><div class="played-center"><div class="center-deck-vira"><div class="deck-stack"><span></span><span></span><b>🂠</b><small>BARALHO</small></div><div class="vira-block"><span class="vira-row">VIRA</span><div class="vira-card ${viraRed}"><small>${online.vira.name}</small>${online.vira.suit.symbol}</div><em>MANILHA: ${mi}</em></div></div></div><div class="played-slot player-play">${myTable?`<label>VOCÊ</label>${cardMarkup(myTable.card,'',myTable.covered)}`:'<div class="empty-slot"></div>'}</div></div><p class="table-message">${escapeHTML(online.message)}</p><div class="player-area"><span class="table-meta">ONLINE · ${escapeHTML(onlineRole===1?'CRIADOR':'CONVIDADO')}</span><div class="player-badge"><span class="player-face">L</span><span>${escapeHTML(myName)}</span></div></div></div>${controls}<p class="round-info">Partida online · pontos virtuais · vence quem chegar a ${TARGET} tentos</p></div>`;
+    body.innerHTML=`<div class="game-shell"><div class="scoreboard"><div class="score-box"><span>${escapeHTML(myName)}</span><strong>${myPts}</strong><small>${myTr} rodada(s) nesta mão</small></div><div class="score-box"><span>TENTOS</span><strong>${online.stake}</strong><small>vale ${online.stake}</small></div><div class="score-box"><span>${escapeHTML(oppName)}</span><strong>${oppPts}</strong><small>${oppTr} rodada(s) nesta mão</small></div></div><div class="table-wrap"><div class="table-top"><div class="player-badge opponent-badge"><span class="player-face">👤</span><span>${escapeHTML(oppName)}</span></div><span class="table-meta">MÃO ${online.handNumber} · ${Math.min(online.round,3)}/3</span>${fxBtn()}</div><div class="opponent-hand">${oppCards.map(()=>'<span class="mini-back"></span>').join('')}</div><div class="play-area"><div class="played-slot opponent-play">${oppTable?`<label>${escapeHTML(oppName.toUpperCase())}</label>${cardMarkup(oppTable.card,fresh[onlineRole===1?2:1]?'fly-bot':'',oppTable.covered)}`:'<div class="empty-slot"></div>'}</div><div class="played-center"><div class="center-deck-vira"><div class="deck-stack"><span></span><span></span><b>🂠</b><small>BARALHO</small></div><div class="vira-block"><span class="vira-row">VIRA</span><div class="vira-card ${viraRed}"><small>${online.vira.name}</small>${online.vira.suit.symbol}</div><em>MANILHA: ${mi}</em></div></div></div><div class="played-slot player-play">${myTable?`<label>VOCÊ</label>${cardMarkup(myTable.card,fresh[onlineRole]?'fly-me':'',myTable.covered)}`:'<div class="empty-slot"></div>'}</div></div><p class="table-message">${escapeHTML(online.message)}</p><div class="player-area"><span class="table-meta">ONLINE · ${escapeHTML(onlineRole===1?'CRIADOR':'CONVIDADO')}</span><div class="player-badge"><span class="player-face">L</span><span>${escapeHTML(myName)}</span></div></div></div>${controls}<p class="round-info">Partida online · pontos virtuais · vence quem chegar a ${TARGET} tentos</p></div>`;
     body.querySelectorAll('[data-card]').forEach(b=>b.addEventListener('click',()=>{online.selected=Number(b.dataset.card);onlineRender();}));
     body.querySelectorAll('[data-online-action]').forEach(b=>b.addEventListener('click',()=>{const a=b.dataset.onlineAction;if(a==='leave'){if(onlineConn)onlineConn.close();if(peer)peer.destroy();online=null;onlineRole=null;onlineClearTimer();dialog.close();return;}onlineAction(a,online.selected);}));
   }
