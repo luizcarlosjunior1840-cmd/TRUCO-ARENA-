@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#111713">
   <meta name="description" content="Truco Arena — treine Truco Paulista com pontos virtuais.">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="stylesheet" href="style.css?v=3">
   <title>Truco Arena</title>
 </head>
@@ -67,7 +70,7 @@
       <button class="feature-card panel" data-page="Clãs"><span>🛡️</span><strong>Clãs</strong><small>Jogue em equipe</small></button>
     </section>
 
-    <aside class="responsible panel"><span>🛡️</span><p><strong>Jogo responsável e gratuito</strong><small>Os pontos são virtuais, não podem ser comprados nem sacados e não têm valor em dinheiro.</small></p></aside>
+    <aside class="responsible panel"><span>🛡️</span><p><strong>Jogo responsável e gratuito</strong><small>Os pontos são virtuais, não podem ser comprados nem sacados e não têm valor em dinheiro. <a href="privacidade.html" style="color:inherit">Política de privacidade</a></small></p></aside>
   </main>
 
   <nav class="bottom-nav" aria-label="Navegação principal">
@@ -84,5 +87,6 @@
   </dialog>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script src="app.js?v=4"></script>
+  <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>
