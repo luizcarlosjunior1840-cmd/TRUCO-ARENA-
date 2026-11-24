@@ -4,6 +4,22 @@ window.FX = (() => {
   let ctx = null, music = null, timer = null, mode = 0, step = 0; // 0 tudo, 1 sem música, 2 mudo
   try { const m = parseInt(localStorage.getItem("trucoFxMode"), 10); if (m >= 0 && m <= 2) mode = m; } catch (_) {}
   const icons = ["🔊", "🔉", "🔇"];
+  // Se existirem arquivos de áudio na raiz do site, eles têm prioridade. Sem eles, usa os sons gerados.
+  const FILES = { card: "carta.mp3", truco: "truco.mp3", seis: "seis.mp3", nove: "nove.mp3", doze: "doze.mp3", aceito: "aceito.mp3", correu: "correu.mp3", music: "musica.mp3" };
+  const clip = {};
+  Object.keys(FILES).forEach(k => {
+    try {
+      const a = new Audio(); a.preload = "auto";
+      if (k === "music") { a.loop = true; a.volume = 0.35; }
+      a.addEventListener("canplaythrough", () => { clip[k] = a; }, { once: true });
+      a.addEventListener("error", () => { clip[k] = null; }, { once: true });
+      a.src = FILES[k];
+    } catch (_) {}
+  });
+  function play(k, vol) {
+    const a = clip[k]; if (!a || mode === 2) return false;
+    try { a.currentTime = 0; a.volume = vol || 1; a.play().catch(() => {}); return true; } catch (_) { return false; }
+  }
   const hz = m => 440 * Math.pow(2, (m - 69) / 12);
   function ensure() {
     if (!ctx) {
@@ -29,11 +45,14 @@ window.FX = (() => {
     [0, 1, 2, 1, 2, 1, 0, 1].forEach((k, i) => tone(music, c[k] + 12, t + i * 0.45, 0.7, "triangle", 0.03));
   }
   function startMusic() {
-    if (mode !== 0 || !ensure()) return;
+    if (mode !== 0) return;
+    if (clip.music) { clip.music.play().catch(() => {}); return; }
+    if (!ensure()) return;
     music.gain.setTargetAtTime(0.5, ctx.currentTime, 0.1);
     if (!timer) { bar(); timer = setInterval(bar, 3600); }
   }
   function stopMusic() {
+    if (clip.music) clip.music.pause();
     clearInterval(timer); timer = null;
     if (ctx && music) music.gain.setTargetAtTime(0, ctx.currentTime, 0.08);
   }
@@ -52,7 +71,9 @@ window.FX = (() => {
     o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t + 0.16);
   }
   function say(text, bot) {
-    if (mode === 2 || !("speechSynthesis" in window)) return;
+    if (mode === 2) return;
+    if (play({ "Aceito!": "aceito", "Correu!": "correu" }[text], 1)) return;
+    if (!("speechSynthesis" in window)) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
@@ -63,7 +84,11 @@ window.FX = (() => {
     } catch (_) {}
   }
   const WORDS = { 3: "Truco!", 6: "Seis!", 9: "Nove!", 12: "Doze!" };
-  function call(stake, bot) { thump(1.4, 0); thump(1.4, 0.18); say(WORDS[stake] || "Truco!", bot); }
+  function call(stake, bot) {
+    const k = { 3: "truco", 6: "seis", 9: "nove", 12: "doze" }[stake] || "truco";
+    if (play(k, 1)) return;
+    thump(1.4, 0); thump(1.4, 0.18); say(WORDS[stake] || "Truco!", bot);
+  }
   function end(win) {
     if (mode === 2 || !ensure()) return;
     const t = ctx.currentTime + 0.05;
@@ -80,13 +105,14 @@ window.FX = (() => {
   function unlock() { ensure(); startMusic(); }
   document.addEventListener("pointerdown", unlock, { once: true });
   document.addEventListener("visibilitychange", () => {
-    if (!ctx) return;
-    if (document.hidden) ctx.suspend().catch(() => {}); else ctx.resume().catch(() => {});
+    if (!ctx && !clip.music) return;
+    if (document.hidden) { if (ctx) ctx.suspend().catch(() => {}); if (clip.music) clip.music.pause(); }
+    else { if (ctx) ctx.resume().catch(() => {}); if (mode === 0 && clip.music) clip.music.play().catch(() => {}); }
   });
   document.addEventListener("click", e => {
     const b = e.target.closest(".fx-toggle"); if (!b) return;
     e.preventDefault(); cycle();
   });
   document.addEventListener("DOMContentLoaded", paint);
-  return { card: () => thump(1, 0), call, say, end, icon: () => icons[mode], paint };
+  return { card: () => { if (!play("card", 0.9)) thump(1, 0); }, call, say, end, icon: () => icons[mode], paint };
 })();
